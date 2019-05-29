@@ -7,6 +7,17 @@ jobs:
         steps:
             - checkout
             - setup_remote_docker: { reusable: true, docker_layer_caching: true }
+
+            # check go fmt output because it does not report non-zero when there are fmt changes
+            - run:
+                name: check go fmt
+                command: |
+                    files=$(go fmt ./...)
+                    if [ -n "$files" ]; then
+                    echo "The following file(s) do not conform to go fmt:"
+                    echo "$files"
+                    exit 1
+                    fi
             - run: go get -v -t ./...
             - run: go vet ./...
             - run: go test -v -race -cover ./...
