@@ -1,4 +1,4 @@
-package callFunc
+package callfunc
 
 import (
 	"errors"
@@ -7,10 +7,12 @@ import (
 	"runtime"
 )
 
+// CallFunc -
 type CallFunc struct {
 	NumInCheck bool
 }
 
+// Call -
 func (cf *CallFunc) Call(mFunc interface{}, mFuncParams ...interface{}) ([]reflect.Value, error) {
 	mFuncTypeOf := reflect.TypeOf(mFunc)
 	if mFuncTypeOf.Kind() != reflect.Func {

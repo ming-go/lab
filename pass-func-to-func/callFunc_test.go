@@ -1,4 +1,4 @@
-package callFunc
+package callfunc
 
 import (
 	"math"
