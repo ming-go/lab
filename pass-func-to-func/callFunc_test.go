@@ -42,11 +42,11 @@ func TestCallFuncNumInCheckIsTrue(t *testing.T) {
 	resultInt := resultValue.Interface().(int)
 	assert.Equal(t, 10, resultInt)
 
-	results, err = cf.Call(min, 10, 20, 30)
+	_, err = cf.Call(min, 10, 20, 30)
 	assert.NotNil(t, err)
 	assert.Equal(t, "The number of param is not adapted", err.Error())
 
-	results, err = cf.Call(maxInt, 10, 20, 30, 40, 50, 60, 70)
+	_, err = cf.Call(maxInt, 10, 20, 30, 40, 50, 60, 70)
 	assert.NotNil(t, err)
 	assert.Equal(t, "The number of param is not adapted", err.Error())
 }
