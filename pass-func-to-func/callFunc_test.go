@@ -44,11 +44,11 @@ func TestCallFuncNumInCheckIsTrue(t *testing.T) {
 
 	_, err = cf.Call(min, 10, 20, 30)
 	assert.NotNil(t, err)
-	assert.Equal(t, "The number of param is not adapted", err.Error())
+	assert.Equal(t, "the number of param is not adapted", err.Error())
 
 	_, err = cf.Call(maxInt, 10, 20, 30, 40, 50, 60, 70)
 	assert.NotNil(t, err)
-	assert.Equal(t, "The number of param is not adapted", err.Error())
+	assert.Equal(t, "the number of param is not adapted", err.Error())
 }
 
 func TestCallFuncNumInCheckIsFalse(t *testing.T) {

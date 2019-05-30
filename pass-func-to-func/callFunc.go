@@ -16,14 +16,14 @@ type CallFunc struct {
 func (cf *CallFunc) Call(mFunc interface{}, mFuncParams ...interface{}) ([]reflect.Value, error) {
 	mFuncTypeOf := reflect.TypeOf(mFunc)
 	if mFuncTypeOf.Kind() != reflect.Func {
-		return nil, errors.New("Can only pass func")
+		return nil, errors.New("can only pass func")
 	}
 
 	mFuncName := runtime.FuncForPC(reflect.ValueOf((mFunc)).Pointer()).Name()
 
 	if cf.NumInCheck {
 		if len(mFuncParams) != mFuncTypeOf.NumIn() {
-			return nil, errors.New("The number of param is not adapted")
+			return nil, errors.New("the number of param is not adapted")
 		}
 	}
 
