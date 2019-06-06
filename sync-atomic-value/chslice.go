@@ -8,17 +8,23 @@ type chSlice struct {
 
 func NewCHSlice(len int, cap int) *chSlice {
 	cs := &chSlice{
-		s: make([]int, len, cap),
+		s:      make([]int, len, cap),
+		ch:     make(chan func()),
+		stopCh: make(chan struct{}),
 	}
 
 	go func() {
 		for {
 			select {
-			case (<-cs.ch)():
-			case stppCh:
+			case f := <-cs.ch:
+				f()
+			case <-cs.stopCh:
+				break
 			}
 		}
 	}()
+
+	return cs
 }
 
 func (s *chSlice) Get(index int) (value int) {
@@ -38,26 +44,33 @@ func (s *chSlice) Set(index int, value int) {
 
 	s.ch <- func() {
 		s.s[index] = value
+		finCh <- struct{}{}
 	}
 
 	<-finCh
 	return
 }
 
-func (s *chSlice) Len() (len int) {
+func (s *chSlice) Len() (length int) {
 	finCh := make(chan struct{})
+
 	s.ch <- func() {
-		len = len(s.s[index])
+		length = len(s.s)
+		finCh <- struct{}{}
 	}
+
 	<-finCh
 	return
 }
 
 func (s *chSlice) Append(elements ...int) {
 	finCh := make(chan struct{})
+
 	s.ch <- func() {
 		s.s = append(s.s, elements...)
+		finCh <- struct{}{}
 	}
+
 	<-finCh
 	return
 }
