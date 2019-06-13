@@ -7,19 +7,20 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	consulAPI "github.com/hashicorp/consul/api"
 )
 
-const consulAddress = "172.77.0.66:8500"
+const consulAddress = "172.77.0.22:8500"
+
+var httpHost = ""
+var httpPort = 8787
 
 func main() {
 	if len(os.Args) < 4 {
 		log.Fatal("you must specify a httpHost & httpPort")
 	}
-
-	httpHost := ""
-	httpPort := 8787
 
 	flag.StringVar(&httpHost, "host", "127.0.0.1", "http host")
 	flag.IntVar(&httpPort, "port", 8787, "http port")
@@ -33,9 +34,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	const SERVICE_NAME = "service-discovery-test"
+
 	agent := client.Agent()
 	if err := agent.ServiceRegister(&consulAPI.AgentServiceRegistration{
-		Name:    "service-discovery-test",
+		ID:      SERVICE_NAME + httpHost + ":" + strconv.Itoa(httpPort),
+		Name:    SERVICE_NAME,
 		Address: httpHost,
 		Port:    httpPort,
 		//Check: consulAPI.AgentServiceCheck{
@@ -46,8 +50,29 @@ func main() {
 	}
 
 	//agent.UpdateTTL()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/sd/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 
 	if err := http.ListenAndServe(net.JoinHostPort(httpHost, strconv.Itoa(httpPort)), nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func pingServer(retries int) error {
+RETRY:
+	resp, err := http.Get(net.JoinHostPort(httpHost, strconv.Itoa(httpPort)))
+	if err == nil && resp.StatusCode == 200 {
+		return nil
+	}
+
+	if retries > 0 {
+		<-time.After(1 * time.Second)
+		retries--
+		goto RETRY
+	}
+
+	return nil
 }
