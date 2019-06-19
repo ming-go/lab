@@ -112,7 +112,7 @@ func main() {
 		srv.Shutdown()
 		err := agent.ServiceDeregister(AGENT_SERVICE_ID)
 		if err != nil {
-			log.Println("agent.ServiceDeregister: %v", err)
+			log.Printf("agent.ServiceDeregister: %+v\n", err)
 		}
 
 		log.Println("Graceful shutdown")
