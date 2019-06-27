@@ -1,7 +1,9 @@
 package hraft
 
 import (
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,6 +29,8 @@ type hraft struct {
 
 var TombstoneTTL time.Duration = 15 * time.Minute
 var TombstoneTTLGranularity time.Duration = 30 * time.Second
+var raftLogCacheSize = 512
+var snapshotsRetained = 2
 
 const (
 	raftState = "raft/"
@@ -65,17 +69,67 @@ func New(nodeID raft.ServerID) (*hraft, error) {
 
 	hraft.RaftConfig.LocalID = nodeID
 
-	path := filepath.Join("./data", raftState)
+	var log raft.LogStore
+	var stable raft.StableStore
+	var snap raft.SnapshotStore
+
+	raftDataPath := filepath.Join("./data", raftState)
 	if err := ensurePath(path, true); err != nil {
 		return err
 	}
 
-	store, err := raftboltdb.NewBoltStore(filepath.Join(path, "raft.db"))
+	// Create the backend raft store for logs and stable storage.
+	store, err := raftboltdb.NewBoltStore(filepath.Join(raftDataPath, "raft.db"))
 	if err != nil {
 		return nil, err
 	}
 
 	hraft.raftStore = store
+	stable = store
+
+	// Wrap the store in a LogCache to improve performance.
+	cacheStore, err := raft.NewLogCache(raftLogCacheSize, store)
+	if err != nil {
+		return nil, err
+	}
+	log = cacheStore
+
+	snapshots, err := raft.NewFileSnapshotStore(filepath, hraft.logOutput)
+	if err != nil {
+		return err
+	}
+	snap = snapshots
+
+	peersFile := filepath.Join(path, "peers.json")
+	peersInfoFile := filepath.Join(path, "peers.info")
+
+	if _, err := os.Stat(peersInfoFile); os.IsNotExist(err) {
+		if err := ioutil.WriteFile(peersInfoFile, []byte(peersInfoContent), 0755); err != nil {
+			return fmt.Errorf("failed to write peers.info file: %v", err)
+		}
+
+		if _, err := os.Stat(peersFile); err == nil {
+			if err := os.Remove(peersFile); err != nil {
+				return fmt.Errorf("failed to delete peers.json, please delete manually (see peers.info for details): %v", err)
+			}
+
+			zap.L().Info("consul: deleted peers.json file (see peers.info for details)")
+		}
+	} else if _, err := os.Stat(peersFile); err == nil {
+		zap.L().Info("consul: found peers.json file, recovering Raft configuration...")
+
+		var configuration raft.Configuration
+		configuration, err = raft.ReadConfigJSON(peersFile)
+		if err != nil {
+			return fmt.Errorf("recovery failed to parse peers.json: %v", err)
+		}
+
+		tmpFsm, err := fsm.New(hraft.tombstoneGC, hraft.LogOutput)
+		if err != nil {
+			return fmt.Errorf("recovery failed to make temp FSM: %v", err)
+		}
+
+	}
 
 	return nil, nil
 }
