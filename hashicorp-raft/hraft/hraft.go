@@ -1,4 +1,10 @@
-//Ref: [1]: https://cloud.tencent.com/developer/article/1183490
+/*
+	Ref:
+		[1]: https://cloud.tencent.com/developer/article/1183490
+		[2]: https://github.com/rqlite/rqlite
+		[3]: https://github.com/yongman/leto
+		[4]: https://github.com/hashicorp/consul/tree/master/agent/consul
+*/
 
 package hraft
 
@@ -27,7 +33,7 @@ type Config struct {
 }
 
 type hraft struct {
-	raft          *raft.Raft
+	Raft          *raft.Raft
 	fsm           *fsm.FSM
 	tombstoneGC   *state.TombstoneGC
 	logOutput     io.Writer //raft.LogStore
@@ -214,7 +220,7 @@ func New(nodeID raft.ServerID, bind string, bootstrap bool) (*hraft, error) {
 	hraft.raftNotifyCh = raftNotifyCh
 
 	// Setup the Raft store.
-	hraft.raft, err = raft.NewRaft(hraft.RaftConfig, hraft.fsm, log, stable, snap, trans)
+	hraft.Raft, err = raft.NewRaft(hraft.RaftConfig, hraft.fsm, log, stable, snap, trans)
 	if err != nil {
 		return nil, err
 	}
@@ -225,9 +231,7 @@ func New(nodeID raft.ServerID, bind string, bootstrap bool) (*hraft, error) {
 func (hr *hraft) Join(nodeID string, addr string) error {
 	hr.logger.Printf("received join request for remote node %s, addr %s", nodeID, addr)
 
-	cf := hr.raft.GetConfiguration()
-
-	fmt.Println("Hello")
+	cf := hr.Raft.GetConfiguration()
 
 	if err := cf.Error(); err != nil {
 		hr.logger.Printf("failed to get raft configuration")
@@ -241,7 +245,7 @@ func (hr *hraft) Join(nodeID string, addr string) error {
 		}
 	}
 
-	f := hr.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
+	f := hr.Raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
 	if err := f.Error(); err != nil {
 		return err
 	}
