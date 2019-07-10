@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -39,17 +40,22 @@ func RateLimit(cfg *RateLimitConfig) echo.MiddlewareFunc {
 			isExceedLimit := false
 			token, err := cfg.ExtractorFunc(c.Request())
 			if err != nil {
-				// Log
-				return c.JSON(http.StatusInternalServerError, resp{Message: "API rate limit extractorFunc exist a error"})
+				log.Println("API rate limit extractorFunc returns an error: ", err)
+				return c.JSON(http.StatusInternalServerError, resp{Message: "API rate limit extractorFunc returns an error"})
 			}
 
-			if err := cfg.Impl.Take(token); err == nil {
+			result, err := cfg.Impl.Take(token)
+			if err != nil {
 				isExceedLimit = true
 			}
 
+			remaining := result.Remaining
+
+			reset := strconv.FormatInt(result.Reset, 10)
+
 			c.Response().Header().Set(HeaderXRateLimitLimit, strconv.Itoa(cfg.Impl.GetLimit()))
-			//c.Response().Header().Set(HeaderXRateLimitRemaining, "1")
-			//c.Response().Header().Set(HeaderXRateLimitReset, strconv.Itoa(int(time.Now().Unix())))
+			c.Response().Header().Set(HeaderXRateLimitRemaining, strconv.Itoa(remaining))
+			c.Response().Header().Set(HeaderXRateLimitReset, reset)
 
 			if isExceedLimit {
 				return c.JSON(http.StatusForbidden, resp{Message: "API rate limit exceeded for " + token})

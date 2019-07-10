@@ -52,6 +52,16 @@ github.com/ming-go/pkg v0.0.0-20190709105745-d7502ed6826c h1:2DejEea1CJLVFY+eYxw
 github.com/ming-go/pkg v0.0.0-20190709105745-d7502ed6826c/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
 github.com/ming-go/pkg v0.0.0-20190709110340-c1507c940d1f h1:abAe/neXy0GFjNhI9wuV+omZaL7KW/FzV+cJWB5KsiE=
 github.com/ming-go/pkg v0.0.0-20190709110340-c1507c940d1f/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
+github.com/ming-go/pkg v0.0.0-20190710015315-f954196210fa h1:rfSWiUAebtaXSPJjBo22LOVaZeWA4Cw6MnK/2/9Ejfs=
+github.com/ming-go/pkg v0.0.0-20190710015315-f954196210fa/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
+github.com/ming-go/pkg v0.0.0-20190710022951-f03d345ae101 h1:Wm7aGoI/FB3ecLNXIx/RG50xv2maFfCdsSn6Va3D9vs=
+github.com/ming-go/pkg v0.0.0-20190710022951-f03d345ae101/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
+github.com/ming-go/pkg v0.0.0-20190710023235-2a03a3679c6a h1:4W1n4xnJPShdcfWTy33RJf69Z7vx80UCA10kUKwPN5Y=
+github.com/ming-go/pkg v0.0.0-20190710023235-2a03a3679c6a/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
+github.com/ming-go/pkg v0.0.0-20190710024820-0bf067fac2a4 h1:mTUR2B8EZ0S2QlsMEnVVETJscCnh0dzP5O3xuV5xMEw=
+github.com/ming-go/pkg v0.0.0-20190710024820-0bf067fac2a4/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
+github.com/ming-go/pkg v0.0.0-20190710065238-80930813f677 h1:drPwDlRdYHQaTYxcHPyPhY8MSpnnMxzxWoYd+hNXSxc=
+github.com/ming-go/pkg v0.0.0-20190710065238-80930813f677/go.mod h1:w97IuwD07ZTY1exDgXiAskEYvElL62VkkLQwhGBg7s4=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/go-homedir v1.0.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/go-testing-interface v1.0.0/go.mod h1:kRemZodwjscx+RGhAo8eIhFbs2+BFgRtFPeD/KE+zxI=

@@ -40,15 +40,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	impl := ratelimiting.NewRedisLeakyBucketImpl(&ratelimiting.RedisLeakyBucketImplConfig{
-		RPool:  pool,
-		Limit:  2,
-		Period: 5 * time.Second,
-	})
-
 	tGroup := e.Group("/test", ratelimit.RateLimit(
 		&ratelimit.RateLimitConfig{
-			Impl:          impl,
+			Impl: ratelimiting.NewRedisLeakyBucketImpl(
+				&ratelimiting.RedisLeakyBucketImplConfig{
+					RPool:  pool,
+					Limit:  2,
+					Period: 60 * time.Second,
+				},
+			),
 			ExtractorFunc: ratelimit.ExtractorFuncByURLPath,
 		},
 	))
