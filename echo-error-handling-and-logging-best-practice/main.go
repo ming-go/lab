@@ -10,67 +10,18 @@ import (
 	"net"
 	"net/http"
 	"sync/atomic"
-	"time"
 
 	"github.com/labstack/echo"
+	"github.com/ming-go/lab/echo-error-handling-and-logging-best-practice/controllers"
 	"github.com/ming-go/pkg/snowflake"
 	"go.uber.org/zap"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-type modelResult struct {
-	Value float64
-}
 
 type key int
 
 const (
 	snowflakeKey key = iota
 )
-
-func model() (*modelResult, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:8787"))
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	cancel()
-
-	err = client.Connect(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var result modelResult
-	collection := client.Database("testing").Collection("testing")
-	err = collection.FindOne(ctx, bson.M{"name": "pi"}).Decode(&result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-func module() (*modelResult, error) {
-	return model()
-}
-
-func controllerOK(c echo.Context) error {
-	return c.JSON(http.StatusOK, &modelResult{Value: 10.0})
-}
-
-func controllerError(c echo.Context) error {
-	result, err := module()
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, result)
-}
 
 func GetRequestURL(r *http.Request) string {
 	scheme := "http://"
@@ -127,7 +78,7 @@ func middleIncome() echo.MiddlewareFunc {
 
 			zapFields := []zap.Field{}
 			zapFields = append(zapFields, zap.Int64("RequestID", requestID))
-			zapFields = append(zapFields, zap.String("Error", err.Error()))
+			zapFields = append(zapFields, zap.NamedError("Error", err))
 			zapFields = append(zapFields, zap.String("Request Method", c.Request().Method))
 			zapFields = append(zapFields, zap.String("Request URL", GetRequestURL(c.Request())))
 			zapFields = append(zapFields, zap.String("Request Protocol", c.Request().Proto))
@@ -170,8 +121,8 @@ func main() {
 	e.Use(middleIncome())
 	//e.Use(middleOutcome())
 
-	e.GET("/ok", controllerOK)
-	e.Any("/error", controllerError)
+	e.GET("/ok", controllers.ControllerOK)
+	e.Any("/error", controllers.ControllerError)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
