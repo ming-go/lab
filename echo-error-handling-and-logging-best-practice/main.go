@@ -23,23 +23,13 @@ const (
 	snowflakeKey key = iota
 )
 
-func GetRequestURL(r *http.Request) string {
+func getRequestURL(r *http.Request) string {
 	scheme := "http://"
 	if r.TLS != nil {
 		scheme = "https://"
 	}
 
 	return scheme + r.Host + r.RequestURI
-}
-
-type ErrorStruct struct {
-	Code      string `json:"code"`
-	Message   string `json:"message"`
-	RequestID int64  `json:"requestID"`
-}
-
-type ErrorResponse struct {
-	ErrorStruct `json:"error"`
 }
 
 func middleIncome() echo.MiddlewareFunc {
@@ -67,20 +57,11 @@ func middleIncome() echo.MiddlewareFunc {
 				return nil
 			}
 
-			// Error Handling Example
-			c.JSON(http.StatusInternalServerError, &ErrorResponse{
-				ErrorStruct: ErrorStruct{
-					Code:      "ContextError",
-					Message:   "Context Canceled",
-					RequestID: requestID,
-				},
-			})
-
 			zapFields := []zap.Field{}
 			zapFields = append(zapFields, zap.Int64("RequestID", requestID))
 			zapFields = append(zapFields, zap.NamedError("Error", err))
 			zapFields = append(zapFields, zap.String("Request Method", c.Request().Method))
-			zapFields = append(zapFields, zap.String("Request URL", GetRequestURL(c.Request())))
+			zapFields = append(zapFields, zap.String("Request URL", getRequestURL(c.Request())))
 			zapFields = append(zapFields, zap.String("Request Protocol", c.Request().Proto))
 			zapFields = append(zapFields, zap.Any("Request Header", c.Request().Header))
 			zapFields = append(zapFields, zap.Any("Remote Address", c.Request().RemoteAddr))
@@ -97,11 +78,17 @@ func middleIncome() echo.MiddlewareFunc {
 
 var sf atomic.Value
 
-type bodyDumpResponseWriter struct {
-	io.Writer
-	http.ResponseWriter
+func router() {
+	e := echo.New()
+	e.Use(middleIncome())
+
+	e.GET("/ok", controllers.ControllerOK)
+	e.Any("/error", controllers.ControllerError)
+
+	e.Logger.Fatal(e.Start(":1323"))
 }
 
+// TODO: graceful shutdown
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -109,22 +96,25 @@ func main() {
 	if err != nil {
 		log.Fatal("zap init failed", err)
 	}
+
 	zap.ReplaceGlobals(logger)
 
 	sfp, err := snowflake.New(0, 0)
 	if err != nil {
 		log.Fatal("snowflake init failed", err)
 	}
+
 	sf.Store(sfp)
 
-	e := echo.New()
-	e.Use(middleIncome())
-	//e.Use(middleOutcome())
+	go router()
 
-	e.GET("/ok", controllers.ControllerOK)
-	e.Any("/error", controllers.ControllerError)
+	forever := make(chan struct{})
+	<-forever
+}
 
-	e.Logger.Fatal(e.Start(":1323"))
+type bodyDumpResponseWriter struct {
+	io.Writer
+	http.ResponseWriter
 }
 
 func (w *bodyDumpResponseWriter) WriteHeader(code int) {
