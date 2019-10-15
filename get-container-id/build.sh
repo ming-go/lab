@@ -18,6 +18,6 @@ cd ""$BUILD_PATH""
 
 docker build -t get-container-id:1.0.0 .
 
-docker run -it --rm get-container-id:1.0.0 -httpPort 6666
+docker run -it --rm get-container-id:1.0.0 -httpPort 8787
 
 rm -f $BUILD_PATH/build/bin/main
