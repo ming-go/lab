@@ -16,8 +16,8 @@ docker run -it --rm \
 
 cd ""$BUILD_PATH""
 
-docker build -t get-container-id:1.0.0 .
+docker build -t get-container-id:1.0.1 .
 
-docker run -it --rm get-container-id:1.0.0 -httpPort 8787
+docker run -it --rm get-container-id:1.0.1 -httpPort 8787
 
 rm -f $BUILD_PATH/build/bin/main

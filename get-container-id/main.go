@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,6 +11,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 func getConatinerID() (string, error) {
@@ -61,12 +64,59 @@ type responseError struct {
 
 var httpPort = "8787"
 
+func getRequestURL(r *http.Request) string {
+	scheme := "http://"
+	if r.TLS != nil {
+		scheme = "https://"
+	}
+
+	return scheme + r.Host + r.RequestURI
+}
+
 func main() {
 	flag.StringVar(&httpPort, "httpPort", "8787", "-httpPort 8787")
 	flag.Parse()
 
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	zap.ReplaceGlobals(logger)
+
 	sc := stringCache{}
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			reqBody := []byte{}
+			if r.Body != nil { // Read
+				reqBody, _ = ioutil.ReadAll(r.Body)
+			}
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
+
+			zapFields := []zap.Field{}
+			zapFields = append(zapFields, zap.String("Request Method", r.Method))
+			zapFields = append(zapFields, zap.String("Request URL", getRequestURL(r)))
+			zapFields = append(zapFields, zap.String("Request URL Path", r.URL.Path))
+			zapFields = append(zapFields, zap.String("Request Protocol", r.Proto))
+			zapFields = append(zapFields, zap.Any("Request Header", r.Header))
+			zapFields = append(zapFields, zap.Any("Remote Address", r.RemoteAddr))
+
+			zapFields = append(zapFields, zap.ByteString("Request Body", reqBody))
+
+			zap.L().Info("IncomeLog", zapFields...)
+		}
+
+		b, err := json.Marshal(responseSuccess{Data: "Hello, ming-go!"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
+	})
+
 	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		b, err := json.Marshal(responseSuccess{Data: "Hello, world!"})
 		if err != nil {
