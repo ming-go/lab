@@ -105,6 +105,9 @@ func main() {
 			zapFields = append(zapFields, zap.ByteString("Request Body", reqBody))
 
 			zap.L().Info("IncomeLog", zapFields...)
+
+			http.NotFound(w, r)
+			return
 		}
 
 		b, err := json.Marshal(responseSuccess{Data: "Hello, ming-go!"})

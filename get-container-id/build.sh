@@ -1,3 +1,12 @@
+# Check Args
+if [ $# -lt 1 ]; then
+   echo "Please Input Build Args : sh build.sh {{tag}}"
+   exit 1
+fi
+
+BUILD_TAG=$1
+echo BUild Tag: $BUILD_TAG
+
 BUILD_PATH=$(pwd)
 echo Build Path: $BUILD_PATH
 
@@ -16,8 +25,8 @@ docker run -it --rm \
 
 cd ""$BUILD_PATH""
 
-docker build -t get-container-id:1.0.1 .
+docker build -t iwdmb/get-container-id:$BUILD_TAG .
 
-docker run -it --rm get-container-id:1.0.1 -httpPort 8787
+docker run -it --rm iwdmb/get-container-id:$BUILD_TAG -httpPort 8787
 
 rm -f $BUILD_PATH/build/bin/main
