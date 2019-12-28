@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -51,7 +52,7 @@ func (sc *stringCache) Set(s string) {
 }
 
 type responseSuccess struct {
-	Data string `json:"data"`
+	Data interface{} `json:"data"`
 }
 
 type errs struct {
@@ -111,6 +112,17 @@ func main() {
 		}
 
 		b, err := json.Marshal(responseSuccess{Data: "Hello, ming-go!"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
+	})
+
+	mux.HandleFunc("/timeNowUnixNano", func(w http.ResponseWriter, r *http.Request) {
+		b, err := json.Marshal(responseSuccess{Data: time.Now().UnixNano()})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
