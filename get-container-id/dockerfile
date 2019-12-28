@@ -2,7 +2,7 @@ FROM alpine:latest
 
 RUN apk upgrade --update --no-cache
 
-USER nobody
+#USER nobody
 
 ADD ./build/bin/main /usr/local/main/bin/main
 
