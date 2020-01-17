@@ -17,3 +17,8 @@ mongodb-mgo
 mysql
 redis-go-redis
 rocksdb
+CockroachDB
+postgres
+tidb
+yugabyte
+memcached
