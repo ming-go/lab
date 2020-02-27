@@ -22,8 +22,8 @@ func getConatinerID() (string, error) {
 	}
 
 	cpuset := string(b)
-	if !strings.Contains(cpuset, "docker") {
-		return "", errors.New("Not in docker")
+	if !strings.Contains(cpuset, "docker") && !strings.Contains(cpuset, "kubepods") {
+		return "", errors.New("Not in container")
 	}
 
 	cpusetSplit := strings.Split(cpuset, "/")
