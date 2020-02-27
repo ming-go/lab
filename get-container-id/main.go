@@ -9,8 +9,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -122,6 +125,20 @@ func main() {
 		w.Write(b)
 	})
 
+	var counter uint64
+
+	mux.HandleFunc("/counter", func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddUint64(&counter, 1)
+		b, err := json.Marshal(responseSuccess{Data: strconv.FormatUint(counter, 10)})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
+	})
+
 	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		b, err := json.Marshal(responseSuccess{Data: "Hello, world!"})
 		if err != nil {
@@ -162,6 +179,21 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
 	})
+
+	go func() {
+		for {
+			currCount := atomic.LoadUint64(&counter)
+			if currCount != 0 {
+				zap.L().Info(
+					"CounterLogger",
+					zap.Uint64("Counter", atomic.LoadUint64(&counter)),
+				)
+			}
+
+			atomic.CompareAndSwapUint64(&counter, counter, 0)
+			<-time.After(1 * time.Second)
+		}
+	}()
 
 	listener, err := net.Listen("tcp", ":"+httpPort)
 	if err != nil {
