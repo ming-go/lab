@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var replacer = strings.NewReplacer("\n", "")
+
 func getConatinerID() (string, error) {
 	b, err := ioutil.ReadFile("/proc/1/cpuset")
 	if err != nil {
@@ -27,7 +29,7 @@ func getConatinerID() (string, error) {
 	}
 
 	cpusetSplit := strings.Split(cpuset, "/")
-	return cpusetSplit[len(cpusetSplit)-1], nil
+	return replacer.Replace(cpusetSplit[len(cpusetSplit)-1]), nil
 }
 
 type stringCache struct {
