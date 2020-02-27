@@ -128,8 +128,8 @@ func main() {
 	var counter uint64
 
 	mux.HandleFunc("/counter", func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddUint64(&counter, 1)
-		b, err := json.Marshal(responseSuccess{Data: strconv.FormatUint(counter, 10)})
+		currCount := atomic.AddUint64(&counter, 1)
+		b, err := json.Marshal(responseSuccess{Data: strconv.FormatUint(currCount, 10)})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
