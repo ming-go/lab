@@ -9,7 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -18,8 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var replacer = strings.NewReplacer("\n", "")
-
 func getConatinerID() (string, error) {
 	b, err := ioutil.ReadFile("/proc/1/cpuset")
 	if err != nil {
@@ -27,12 +25,12 @@ func getConatinerID() (string, error) {
 	}
 
 	cpuset := string(b)
-	if !strings.Contains(cpuset, "docker") && !strings.Contains(cpuset, "kubepods") {
-		return "", errors.New("Not in container")
+	if !strings.Contains(cpuset, "docker") {
+		return "", errors.New("Not in docker")
 	}
 
 	cpusetSplit := strings.Split(cpuset, "/")
-	return replacer.Replace(cpusetSplit[len(cpusetSplit)-1]), nil
+	return cpusetSplit[len(cpusetSplit)-1], nil
 }
 
 type stringCache struct {
@@ -78,7 +76,11 @@ func getRequestURL(r *http.Request) string {
 	return scheme + r.Host + r.RequestURI
 }
 
+var count uint64
+
 func main() {
+	runtime.GOMAXPROCS(2)
+
 	flag.StringVar(&httpPort, "httpPort", "8787", "-httpPort 8787")
 	flag.Parse()
 
@@ -125,22 +127,21 @@ func main() {
 		w.Write(b)
 	})
 
-	var counter uint64
+	go func() {
+		var lastCount uint64
+		for {
+			countSnapshot := atomic.LoadUint64(&count)
+			log.Println("Request Per Second", countSnapshot-lastCount)
+			lastCount = countSnapshot
+
+			<-time.After(1 * time.Second)
+		}
+	}()
 
 	mux.HandleFunc("/timeNowUnixNano", func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddUint64(&count, 1)
+
 		b, err := json.Marshal(responseSuccess{Data: time.Now().UnixNano()})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
-	})
-
-	mux.HandleFunc("/counter", func(w http.ResponseWriter, r *http.Request) {
-		currCount := atomic.AddUint64(&counter, 1)
-		b, err := json.Marshal(responseSuccess{Data: strconv.FormatUint(currCount, 10)})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -190,21 +191,6 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
 	})
-
-	go func() {
-		for {
-			currCount := atomic.LoadUint64(&counter)
-			if currCount != 0 {
-				zap.L().Info(
-					"CounterLogger",
-					zap.Uint64("Counter", atomic.LoadUint64(&counter)),
-				)
-			}
-
-			atomic.CompareAndSwapUint64(&counter, counter, 0)
-			<-time.After(1 * time.Second)
-		}
-	}()
 
 	listener, err := net.Listen("tcp", ":"+httpPort)
 	if err != nil {
