@@ -2,14 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:6a3aedb47e77405c2e76952ec246fc53a59b76554d59eb1c213b574a9b6afc03"
-  name = "github.com/gammazero/deque"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "1e9af0e52b4605179d6a6ecf5a174d87a770775b"
-
-[[projects]]
   digest = "1:7cd2924a44ecf80a319cfa2378529fabd348d011b739fb4eccc565f65e3296c4"
   name = "github.com/json-iterator/go"
   packages = ["."]
@@ -45,7 +37,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/gammazero/deque",
     "github.com/json-iterator/go",
     "github.com/streadway/amqp",
   ]

@@ -90,14 +90,9 @@ type LWrapper struct {
 	sync.RWMutex
 }
 
-func NewLWrapper() LWrapper {
-	return LWrapper{
-		l: list.New(),
-	}
-}
-
 func main() list.List {
-	lw := NewLWrapper()
+	l := list.New()
+	var  sync.RWMutex
 
 	// In
 	go func() {
@@ -123,9 +118,9 @@ func main() list.List {
 			var data Data
 			json.Unmarshal(d.Body, &data)
 			data.From = "Consumer"
-			lw.Lock()
-			lw.l.PushFront(data)
-			lw.Unlock()
+			qLock.Lock()
+			q.PushFront(data)
+			qLock.Unlock()
 		}
 	}()
 
@@ -137,14 +132,10 @@ func main() list.List {
 		}
 
 		for {
-			if lw.l.Len() != 0 {
-				lw.Lock()
-				item := lw.l.Back()
-				var data interface{}
-				if item != nil {
-					data = lw.l.Remove(item)
-				}
-				lw.Unlock()
+			if q.Len() != 0 {
+				qLock.RLock()
+				data := q.PopBack()
+				qLock.RUnlock()
 
 				b, _ := json.Marshal(data)
 
