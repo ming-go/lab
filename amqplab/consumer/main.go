@@ -96,7 +96,7 @@ func NewLWrapper() LWrapper {
 	}
 }
 
-func main() list.List {
+func main() {
 	lw := NewLWrapper()
 
 	// In
