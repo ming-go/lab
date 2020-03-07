@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"sync/atomic"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -81,15 +82,32 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var count uint64
+
+	go func() {
+		for {
+			<-time.After(1 * time.Second)
+			log.Println(atomic.CompareAndSwapUint64(&count, count, 0))
+		}
+	}()
+
 	for i := 0; i < N; i++ {
-		b, _ := json.Marshal(
+		if atomic.LoadUint64(&count) > 10000 {
+			i--
+			continue
+		}
+
+		b, err := json.Marshal(
 			Data{
 				Username:  "ming",
 				CreatedAt: time.Now(),
 			},
 		)
+		if err != nil {
+			log.Println(err)
+		}
 
-		ch.Publish(
+		err = ch.Publish(
 			"",
 			queueName,
 			false,
@@ -100,6 +118,14 @@ func main() {
 				Body:         b,
 			},
 		)
+
+		atomic.AddUint64(&count, 1)
+
+		if err != nil {
+			log.Println(err)
+		}
 	}
+
+	<-time.After(30 * time.Second)
 
 }

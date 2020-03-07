@@ -14,7 +14,7 @@ var config amqp.URI
 func init() {
 	config = amqp.URI{
 		Scheme:   "amqp",
-		Host:     "172.77.0.87",
+		Host:     "172.77.0.88",
 		Port:     5672,
 		Username: "guest",
 		Password: "guest",
@@ -90,7 +90,7 @@ func main() {
 	}
 
 	chDelivery, err := ch.Consume(
-		outName[0],
+		outName[3],
 		"",
 		true,
 		false,
