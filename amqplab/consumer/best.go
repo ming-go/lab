@@ -7,8 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"container/list"
-
+	"github.com/gammazero/deque"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/streadway/amqp"
 )
@@ -21,8 +20,8 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 func init() {
 	configInput = amqp.URI{
 		Scheme:   "amqp",
-		Host:     "172.77.0.87",
-		Port:     5672,
+		Host:     "192.168.7.102",
+		Port:     8787,
 		Username: "guest",
 		Password: "guest",
 		Vhost:    "/",
@@ -30,8 +29,8 @@ func init() {
 
 	configOutput = amqp.URI{
 		Scheme:   "amqp",
-		Host:     "172.77.0.88",
-		Port:     5672,
+		Host:     "192.168.7.102",
+		Port:     8888,
 		Username: "guest",
 		Password: "guest",
 		Vhost:    "/",
@@ -100,14 +99,16 @@ var (
 
 // LWrapper -
 type LWrapper struct {
-	l *list.List
+	//l *list.List
+	q deque.Deque
 	sync.RWMutex
 }
 
 // PushFront -
 func (lw *LWrapper) PushFront(v interface{}) {
 	lw.Lock()
-	lw.l.PushFront(v)
+	//lw.l.PushFront(v)
+	lw.q.PushFront(v)
 	lw.Unlock()
 }
 
@@ -115,25 +116,32 @@ func (lw *LWrapper) PushFront(v interface{}) {
 func (lw *LWrapper) PopBack() interface{} {
 	lw.Lock()
 	defer lw.Unlock()
-	item := lw.l.Back()
-	if item != nil {
-		return lw.l.Remove(item)
+	if lw.q.Len() != 0 {
+		return lw.q.PopBack()
 	}
 
 	return nil
+	//item := lw.l.Back()
+	//if item != nil {
+	//	return lw.l.Remove(item)
+	//}
+
+	//return nil
 }
 
 // Len -
 func (lw *LWrapper) Len() int {
 	lw.RLock()
 	defer lw.RUnlock()
-	return lw.l.Len()
+	return lw.q.Len()
+	//return lw.l.Len()
 }
 
 // NewLWrapper -
 func NewLWrapper() LWrapper {
 	return LWrapper{
-		l: list.New(),
+		//l: list.New(),
+		q: deque.Deque{},
 	}
 }
 
@@ -181,7 +189,7 @@ func main() {
 		chs := make([]*amqp.Channel, 0, 64)
 
 		for i := 0; i < 64; i++ {
-			_, ch, err := open(configOutput, outName[0])
+			_, ch, err := open(configOutput, outName[i%4])
 			chs = append(chs, ch)
 			if err != nil {
 				log.Println(err)
@@ -202,7 +210,7 @@ func main() {
 			}
 		}()
 
-		for i := 0; i < 4; i++ {
+		for i := 0; i < 6; i++ {
 			go func() {
 				for {
 					if lw.Len() != 0 {
