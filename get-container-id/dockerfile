@@ -1,11 +1,12 @@
-FROM alpine:latest
+FROM debian:stable-slim
 
-RUN apk upgrade --update --no-cache
+RUN groupadd -r appgroup && \
+    useradd -r -g appgroup --no-create-home -s /bin/false appuser
 
-#USER nobody
+WORKDIR /app
 
-ADD ./build/bin/main /usr/local/main/bin/main
+COPY --chown=appuser:appgroup ./build/bin/main .
 
-WORKDIR /usr/local/main/bin
+USER appuser
 
 ENTRYPOINT ["./main"]
