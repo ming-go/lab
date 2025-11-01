@@ -5,34 +5,49 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/ming-go/lab/get-container-id/containerid"
 	"go.uber.org/zap"
 )
 
 var replacer = strings.NewReplacer("\n", "")
 
+var ErrContainerIDNotFound = errors.New("container ID not found")
+var containerIDRegex = regexp.MustCompile(`[0-9a-f]{64}`)
+
 func getConatinerID() (string, error) {
-	b, err := ioutil.ReadFile("/proc/1/cpuset")
+	b, err := os.ReadFile("/proc/self/cpuset")
 	if err != nil {
 		return "", err
 	}
 
 	cpuset := string(b)
-	if !strings.Contains(cpuset, "docker") && !strings.Contains(cpuset, "kubepods") {
-		return "", errors.New("Not in container")
+
+	// cgroup v1
+	if strings.TrimSpace(cpuset) != "/" {
+		cpusetSplit := strings.Split(cpuset, "/")
+		return replacer.Replace(cpusetSplit[len(cpusetSplit)-1]), nil
 	}
 
-	cpusetSplit := strings.Split(cpuset, "/")
-	return replacer.Replace(cpusetSplit[len(cpusetSplit)-1]), nil
+	// cgroup v2
+	id, err := containerid.Get()
+
+	if id == "" {
+		return "", ErrContainerIDNotFound
+	}
+
+	return id, nil
 }
 
 type stringCache struct {
@@ -94,9 +109,9 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		reqBody := []byte{}
 		if r.Body != nil { // Read
-			reqBody, _ = ioutil.ReadAll(r.Body)
+			reqBody, _ = io.ReadAll(r.Body)
 		}
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset
+		r.Body = io.NopCloser(bytes.NewBuffer(reqBody)) // Reset
 
 		zapFields := []zap.Field{}
 		zapFields = append(zapFields, zap.String("Request Method", r.Method))
