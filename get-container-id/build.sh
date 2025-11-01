@@ -27,6 +27,6 @@ cd ""$BUILD_PATH""
 
 docker build -t iwdmb/get-container-id:$BUILD_TAG .
 
-docker run -it --rm iwdmb/get-container-id:$BUILD_TAG -httpPort 8787
+docker run -it --rm iwdmb/get-container-id:$BUILD_TAG -httpPort 8080
 
 rm -f $BUILD_PATH/build/bin/main
